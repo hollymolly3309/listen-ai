@@ -75,11 +75,15 @@ app.post("/api/dashboard", authMiddleware, async (req, res) => {
     const sentimentResp = await axios.post(`${nlpUrl}/sentiment`, { texts });
     const sentimentData = sentimentResp.data;
 
-    const classifiedPosts = posts.map((post, idx) => ({
-      ...post,
-      sentiment: sentimentData.classifications?.[idx]?.label || "neutral",
-      sentiment_score: sentimentData.classifications?.[idx]?.score || 0,
-    }));
+    const classifications = sentimentData.classifications || [];
+    const classifiedPosts = posts.map((post, idx) => {
+      const cls = classifications[idx] || {};
+      return {
+        ...post,
+        sentiment: cls.label || "neutral",
+        sentiment_score: cls.score || 0,
+      };
+    });
 
     const examples = classifiedPosts.slice(0, sampleSize);
 
@@ -92,7 +96,7 @@ app.post("/api/dashboard", authMiddleware, async (req, res) => {
       totalAnalyzedPosts: classifiedPosts.length,
     });
   } catch (err) {
-    const detail = err.response?.data || err.message;
+    const detail = (err.response && err.response.data) || err.message;
     return res.status(500).json({
       error: "Failed to build dashboard response",
       detail,
@@ -112,8 +116,8 @@ app.post("/api/posts", authMiddleware, async (req, res) => {
     });
     return res.status(201).json(statResp.data);
   } catch (err) {
-    const status = err.response?.status || 500;
-    const detail = err.response?.data || err.message;
+    const status = (err.response && err.response.status) || 500;
+    const detail = (err.response && err.response.data) || err.message;
     return res.status(status).json({
       error: "Failed to insert post",
       detail,

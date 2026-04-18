@@ -1,0 +1,44 @@
+# Task 4「修改前」：stat 未掛載主機目錄，SQLite 只存在容器檔案系統內，
+# 容器刪除後資料不會保留在主機。
+#
+# 此檔不是 docker compose 預設讀取的檔名，平常執行 docker compose up 不會用到本檔。
+# 若要單獨實測此版本： docker compose -f docker-compose.task4-before.yml up --build
+
+name: listen-ai
+
+services:
+  nlp:
+    build: ./nlp
+    ports:
+      - "8001:8001"
+    environment:
+      NLP_PORT: "8001"
+
+  stat:
+    build: ./stat
+    ports:
+      - "8002:8002"
+    environment:
+      STAT_PORT: "8002"
+      SQLITE_PATH: /data/listenai.db
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    environment:
+      GATEWAY_PORT: "8000"
+      STAT_URL: http://stat:8002
+      NLP_URL: http://nlp:8001
+    depends_on:
+      - nlp
+      - stat
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      GATEWAY_URL: http://gateway:8000
+    depends_on:
+      - gateway

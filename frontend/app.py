@@ -15,7 +15,7 @@ if "token" not in st.session_state:
 
 st.title("ListenAI Dashboard")
 st.caption("Track sentiment, keywords, trends, and example posts by keyword filters.")
-st.text("Hello! 梁安哲")
+st.text("Hello 曾治鈞")
 
 dashboard_tab, add_post_tab = st.tabs(["Dashboard", "Add Post"])
 
@@ -85,7 +85,14 @@ with dashboard_tab:
                     )
 
                 if resp.status_code != 200:
-                    st.error(resp.json().get("error", "Request failed"))
+                    try:
+                        err_data = resp.json()
+                    except ValueError:
+                        err_data = {"error": "Request failed", "detail": resp.text}
+                    st.error(err_data.get("error", "Request failed"))
+                    detail = err_data.get("detail")
+                    if detail is not None and detail != "":
+                        st.code(str(detail), language=None)
                     st.stop()
 
                 data = resp.json()
